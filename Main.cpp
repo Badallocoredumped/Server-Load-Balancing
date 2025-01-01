@@ -9,8 +9,8 @@ int main()
     //20 15
     //5 7 10 
     //10 20 15 25 10 30
-    const unsigned int numClients = 2;
-    const unsigned int numServers = 3;
+    const unsigned int numClients = 3;
+    const unsigned int numServers = 2;
     Task task1(numServers, numClients);
     
     for(int i = 0; i<numServers; i++){

@@ -19,7 +19,7 @@ Termination: Define a termination condition (e.g., a maximum number of generatio
 #include <algorithm>
 #include <cmath>
 #define POPULATION 500
-#define GENERATIONS 350
+#define GENERATIONS 200
 #define crossoverProbability 0.9
 #define mutationProbability 0.2
 
@@ -194,7 +194,9 @@ void geneticAlgorithm(Task task1)
         cout << "Generation " << i+1 << " Current Best: " << endl;
         printIndividual(parentPop[0]);
         cout << "Fitness = " <<parentPop[0].fitness <<endl;
-        cout << "BandwithScore = " << parentPop[0].bandwithFitness << endl;
+        cout << "LatencyScore = " << parentPop[0].latencyScore<< endl;
+        cout << "Penalty Capacity: " << parentPop[0].penaltyCapacity << endl;
+        cout << "Penalty Bandwith: " << parentPop[0].penaltyBandwith << endl;
 
     }
     cout << "Best: " <<endl;
@@ -224,44 +226,31 @@ void printPopulation(vector<Chromosome>& population)
 
 void calculateLatencyScore(Chromosome& individual)
 {
-    double sum = 0;
 
-    vector<int> bandwithAlloc;
+    double latencyScore = 0.0;
 
-    for(int i = 0; i<current1.getNumClients(); i++)
-    {
-        unsigned int sum = 0;
-        for(int j = 0; j<current1.getNumServers(); j++)
-        {
-            sum += individual.ServerAllocations[j][i];
-        }
-        bandwithAlloc.push_back(sum);
-    }
-
-    /*sum = 0;
     for(int i=0; i<current1.getNumClients(); i++)
     {
+        double sum = 0.0;
+        double latencyTotal = 0.0;
         for(int j=0; j<current1.getNumServers(); j++)
         {
-            double dummyScore =  individual.ServerAllocations[j][i] / bandwithAlloc[i];
-
-            sum +=   individual.ServerAllocations[j][i] / dummyScore;
+            latencyTotal += (1.0 / current1.getLatency(j, i));
         }
-    }
-    individual.latencyScore = sum; */
 
-    sum = 0;
-    for(int i=0; i<current1.getNumServers(); i++)
-    {
-        for(int j=0; j<current1.getNumClients(); j++)
-        {
-            sum +=   individual.ServerAllocations[i][j] / current1.getLatency(i, j);
+        for(int j=0; j<current1.getNumServers(); j++){
+            double expected =  current1.getBandwith(i) * (1.0 / current1.getLatency(j, i))/latencyTotal ;
+
+            if(individual.ServerAllocations[j][i] < expected){
+                latencyScore += abs(expected - individual.ServerAllocations[j][i]);
+            }
         }
+        
     }
-    individual.latencyScore = sum;
+    individual.latencyScore = latencyScore;
 }
 
-void bandwithFitness(Chromosome& indi){
+/* void bandwithFitness(Chromosome& indi){
 
     vector<int> bandwithAlloc;
 
@@ -280,7 +269,7 @@ void bandwithFitness(Chromosome& indi){
     }
    
     indi.bandwithFitness = summation;
-}
+} */
 
 void calculatePenalty(Chromosome& indi){
 
@@ -301,7 +290,16 @@ void calculatePenalty(Chromosome& indi){
         }
     }
     
-    
+    for(int i = 0; i<current1.getNumClients(); i++){
+
+        unsigned int sum = 0;
+        for(int j = 0; j<current1.getNumServers(); j++){
+            sum += indi.ServerAllocations[j][i];
+        }
+        if(sum > current1.getBandwith(i)){
+            bandwithPen += (sum-current1.getCapacity(i));
+        }
+    }
 
     indi.penaltyCapacity = capacityPen;
     indi.penaltyBandwith = bandwithPen;
@@ -313,9 +311,8 @@ void evaluate(vector<Chromosome>& pop)
     for(int i = 0; i<POPULATION; i++)
     {
         calculateLatencyScore(pop[i]);
-        bandwithFitness(pop[i]);
         calculatePenalty(pop[i]);
-        pop[i].fitness = pop[i].bandwithFitness + pop[i].latencyScore + 2.5 * pop[i].penaltyCapacity + 2.5 * pop[i].penaltyBandwith + pop[i].connectionPen;
+        pop[i].fitness =  pop[i].latencyScore + 25 * pop[i].penaltyCapacity + 25 * pop[i].penaltyBandwith + pop[i].connectionPen;
         if(pop[i].penaltyCapacity+pop[i].penaltyBandwith+pop[i].connectionPen == 0){
             pop[i].isFeas =true;
         }
