@@ -9,25 +9,33 @@ int main()
     //20 15
     //5 7 10 
     //10 20 15 25 10 30
-    const unsigned int numClients = 3;
-    const unsigned int numServers = 2;
-    Task task1(numServers, numClients);
+    const unsigned int numClients = 4;
+    const unsigned int numServers = 3;
+
+
+    //The structure of the latency matrix is {Server1 -> Client1,Client2...,Clientn}
+    //                                        Server2 -> Client1, Client2....,Clientn};
+    //Do not enter 0 or negative values! It will cause an error
+    vector<vector<double>> desiredLatencyMatrix = {{2.3, 4.5, 2.0, 5.0},{5.0, 10.0, 15.0, 20.0},{5.0, 10.0, 10.0, 20.0}};
+
+    Task task1(numServers, numClients, desiredLatencyMatrix);
+
+    for(int i = 0; i<numClients; i++){
+        int a;
+        cout << "Enter Bandwith of Client "<<i+1<< endl;
+        cout << "(Do not enter 0 or negative values!)" << endl;
+        cin >> a;
+        task1.setBandwith(i, a);    
+    }
     
     for(int i = 0; i<numServers; i++){
         int a;
-        cout << "Enter Capacity:" << endl;
+        cout << "Enter Capacity of Server "<<i+1 << endl;
+        cout << "(Do not enter 0 or negative values!)" << endl;
         cin >> a;
         task1.setCapacity(i, a);    
     }
 
-    for(int i = 0; i<numClients; i++){
-        int a;
-        cout << "Enter Bandwith:" << endl;
-        cin >> a;
-        task1.setBandwith(i, a);    
-    }
-
-    task1.inputMatrix();
     
     geneticAlgorithm(task1);
     

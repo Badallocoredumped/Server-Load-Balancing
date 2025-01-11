@@ -21,6 +21,7 @@ class Task
     public:
     //Constructors
     Task(int NumServers, int numClients);
+    Task(int NumServers, int numClients, vector<vector<double>>);
     Task();
     
     //Methods
@@ -56,6 +57,14 @@ Task::Task(int numServers, int numClients)
     this->capacityServers = vector<unsigned int>(this->numServers);
 }
 
+Task::Task(int numServers, int numClients, vector<vector<double>> matrix)
+{
+    this->numServers = numServers;
+    this->numClients = numClients;
+    this->latencyMatrix = matrix;
+    this->bandwithClients = vector<unsigned int>(this->numClients);
+    this->capacityServers = vector<unsigned int>(this->numServers);
+}
 
 void Task::inputMatrix()
 {

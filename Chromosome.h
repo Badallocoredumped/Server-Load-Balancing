@@ -9,11 +9,10 @@ using namespace std;
 
 struct Chromosome
 {
-    vector<vector<int>> ServerAllocations; //{Server1 -> Client1,Client2..., 
+    vector<vector<double>> ServerAllocations; //{Server1 -> Client1,Client2..., 
                                            //Server2 -> Client1, Client2};
 
     double latencyScore;
-    double bandwithFitness;
 
     double penaltyCapacity;
     double penaltyBandwith;
