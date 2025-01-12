@@ -17,11 +17,20 @@ Termination: Define a termination condition (e.g., a maximum number of generatio
 #include "Task.h"
 #include "Chromosome.h"
 #include <algorithm>
+#include <random>
 #include <cmath>
-#define POPULATION 20
-#define GENERATIONS 1000
-#define crossoverProbability 0.9
-#define mutationProbability 0.2
+#define POPULATION 1000
+#define GENERATIONS 2000
+#define PENALTY_METHOD 1 //1 -> static, 2 -> dynamic, 3 -> adaptive
+#define PENALTY_CONSTANT 100 //The initial penalty constant for each constraints
+#define ELITISM true //true -> elitist_full, false -> non_elitist
+#define SELECTION_METHOD 1 //1-> binary tournament
+#define CROSSOVER_METHOD 2 //1-> blx-alpha, 2 -> sbx
+#define CROSSOVER_ALPHA 0.5 //This is for blx-alpha. Valid range (0,1);
+#define CROSSOVER_ETA 5 //This is for sbx. Valid range (0, 10] (larger values mean more exploitation)
+#define crossoverProbability 0.9 //Prob of crossover
+#define MUTATION_METHOD 1   //1 -> random
+#define mutationProbability 0.2 //Prob of mutation
 
 vector<unsigned int> upperBounds;
 
@@ -40,7 +49,8 @@ void evaluate(vector<Chromosome>&);
 vector<Chromosome> selection(vector<Chromosome>&);
 void variation(vector<Chromosome>&);
 void crossover(Chromosome&, Chromosome&);
-double blxacrossover(double, double, double, int);
+double blxaCrossover(double, double, int);
+void sbxCrossover(Chromosome&, Chromosome&, int, int);
 void mutation(Chromosome&);
 vector<Chromosome> survivor(vector<Chromosome>&, vector<Chromosome>&);
 void printPopulation(vector<Chromosome>&);
@@ -51,46 +61,88 @@ void printIndividual(Chromosome&);
 vector<Chromosome> survivor(vector<Chromosome>& offspring, vector<Chromosome>& parentPop)
 {
     vector<Chromosome> newParent;
-    sort(offspring.begin(), offspring.end(), compareByFitness);
-    sort(parentPop.begin(), parentPop.end(), compareByFitness);
+    if(ELITISM){
+        sort(offspring.begin(), offspring.end(), compareByFitness);
+        sort(parentPop.begin(), parentPop.end(), compareByFitness);
 
-    int offspringIndx = 0;
-    int ParentIndx = 0;
-    for(int i = 0; i<POPULATION; i++)
-    {
-        if(offspring[offspringIndx].fitness < parentPop[ParentIndx].fitness)
+        int offspringIndx = 0;
+        int ParentIndx = 0;
+        for(int i = 0; i<POPULATION; i++)
         {
-            newParent.push_back(offspring[offspringIndx++]);
+            if(offspring[offspringIndx].fitness < parentPop[ParentIndx].fitness)
+            {
+                newParent.push_back(offspring[offspringIndx++]);
+            }
+            else
+            {
+                newParent.push_back(parentPop[ParentIndx++]);
+            }
         }
-        else
-        {
-            newParent.push_back(parentPop[ParentIndx++]);
-        }
+    }
+    else{
+        newParent = offspring;
     }
     return newParent;
 }
 
 void crossover(Chromosome& off1, Chromosome& off2){
-    int crossoverPoint = rand() % current1.getNumServers();
-    for(int i = crossoverPoint; i<current1.getNumServers(); i++){
-        for(int j = 0; j<current1.getNumClients(); j++){
+    if(CROSSOVER_METHOD == 1){
+        for(int i = 0; i<current1.getNumServers(); i++){
+            for(int j = 0; j<current1.getNumClients(); j++){
 
-            double newVal1 = blxacrossover(off1.ServerAllocations[i][j], off2.ServerAllocations[i][j], 0.5, j);
-            double newVal2 = blxacrossover(off1.ServerAllocations[i][j], off2.ServerAllocations[i][j], 0.5, j);
-            off1.ServerAllocations[i][j] = newVal1;
-            off2.ServerAllocations[i][j] = newVal2;
+                double newVal1 = blxaCrossover(off1.ServerAllocations[i][j], off2.ServerAllocations[i][j], j);
+                double newVal2 = blxaCrossover(off1.ServerAllocations[i][j], off2.ServerAllocations[i][j], j);
+                off1.ServerAllocations[i][j] = newVal1;
+                off2.ServerAllocations[i][j] = newVal2;
+            }
+        }
+    }
+    else if(CROSSOVER_METHOD == 2){
+        int crossoverPoint = rand() % current1.getNumServers();
+        for(int i = 0; i<current1.getNumServers(); i++){
+            for(int j = 0; j<current1.getNumClients(); j++){
+
+                sbxCrossover(off1, off2, i,j);
+                sbxCrossover(off1, off2, i,j);
+            }
         }
     }
 }
 
-double blxacrossover(double p1, double p2, double alpha, int clientNum)
+void sbxCrossover(Chromosome& off1, Chromosome& off2, int index1, int index2) {
+    double x1 = off1.ServerAllocations[index1][index2];
+    double x2 = off2.ServerAllocations[index1][index2];
+
+    double k  = ((double)rand() / RAND_MAX); //this creates random double from 0 to 1
+    
+    double beta;
+    if (k <= 0.5) {
+        beta = pow(2 * k, 1.0 / (CROSSOVER_ETA + 1));
+    } else {
+        beta = pow((1.0 / (2 * (1 - k))),( 1.0 / (CROSSOVER_ETA + 1)));
+    }
+
+    double y1 = 0.5 * ((1 + beta) * x1 + (1 - beta) * x2);
+    double y2 = 0.5 * ((1 - beta) * x1 + (1 + beta) * x2);
+    
+    y1 = max(min(y1, (double) upperBounds[index2]), 0.0);
+
+    off1.ServerAllocations[index1][index2] = y1;
+
+    y2 = max(min(y2, (double) upperBounds[index2]), 0.0);
+    off2.ServerAllocations[index1][index2] = y2;
+
+
+}
+
+double blxaCrossover(double p1, double p2, int clientNum)
 {
 
     double minVal = min(p1, p2);
     double maxVal = max(p1, p2);
 
     double u = (rand() % 100) /100;
-    double gamma = ((1.0 + 2.0 * alpha) * u) - alpha;
+    double gamma = ((1.0 + 2.0 * CROSSOVER_ALPHA) * u) - CROSSOVER_ALPHA;
     double off = ((1.0 - gamma) * minVal) + (gamma * maxVal);
     off = max(min(off, (double) upperBounds[clientNum]), 0.0);
     
@@ -98,23 +150,30 @@ double blxacrossover(double p1, double p2, double alpha, int clientNum)
 }
 
 void mutation(Chromosome& off1){
-    for(int i = 0; i<off1.ServerAllocations.size(); i++){
-        for(int j = 0; j<off1.ServerAllocations[0].size(); j++){ 
-            if(rand() % 2 == 1){
-                off1.ServerAllocations[i][j] = rand() % upperBounds[j];
+    if(MUTATION_METHOD == 1){
+        for(int i = 0; i<off1.ServerAllocations.size(); i++){
+            for(int j = 0; j<off1.ServerAllocations[0].size(); j++){ 
+                if(rand() % 2 == 1){
+                    off1.ServerAllocations[i][j] = rand() % upperBounds[j];
+                }
             }
-        }
+        }    
     }
 }
 
 vector<Chromosome> selection(vector<Chromosome>& pop)
 {
     vector<Chromosome> mating;
-    for(int i = 0; i<pop.size(); i++)
-    {
-        int index1 = rand() % pop.size();
-        int index2 = rand() % pop.size();
-        pop[index1].fitness < pop[index2].fitness ? mating.push_back(pop[index1]) : mating.push_back(pop[index2]);
+    if(SELECTION_METHOD == 1){
+        for(int i = 0; i<pop.size(); i++)
+        {
+            int index1 = rand() % pop.size();
+            int index2 = rand() % pop.size();
+            pop[index1].fitness < pop[index2].fitness ? mating.push_back(pop[index1]) : mating.push_back(pop[index2]);
+        }
+    }
+    else{
+        //rankPartition
     }
     return mating;
 }
@@ -249,9 +308,8 @@ void calculateLatencyScore(Chromosome& individual)
 
         for(int j=0; j<current1.getNumServers(); j++){
 
-            double expected =  current1.getBandwith(i) * (1.0 / current1.getLatency(j, i))/latencyTotal;
-
-            latencyScore += abs(individual.ServerAllocations[j][i] - expected); 
+            //minimize the objective function
+            latencyScore +=  abs(current1.getBandwith(i) * (1.0 / current1.getLatency(j, i)) - (individual.ServerAllocations[j][i]*latencyTotal));
         }
         
     }
@@ -268,12 +326,12 @@ void calculatePenalty(Chromosome& indi){
         unsigned int sum = 0;
         for(int j = 0; j<current1.getNumClients(); j++){
             if(indi.ServerAllocations[i][j] == 0){
-                connectionPen += 10000;
+                connectionPen += PENALTY_CONSTANT;
             }
             sum += indi.ServerAllocations[i][j];
         }
         if(sum > current1.getCapacity(i)){
-            capacityPen += (sum-current1.getCapacity(i))*1000;
+            capacityPen += (sum-current1.getCapacity(i))*PENALTY_CONSTANT;
         }
     }
     
@@ -284,7 +342,7 @@ void calculatePenalty(Chromosome& indi){
             sum += indi.ServerAllocations[j][i];
         }
         if(sum > current1.getBandwith(i)){
-            bandwithPen += (sum-current1.getBandwith(i));
+            bandwithPen += (sum-current1.getBandwith(i)*PENALTY_CONSTANT);
         }
     }
 
@@ -300,7 +358,7 @@ void evaluate(vector<Chromosome>& pop)
         calculateLatencyScore(pop[i]);
         calculatePenalty(pop[i]);
         //double penaltyWeight = 25.0 * (1.0 - (double)generation / GENERATIONS);
-        pop[i].fitness =  pop[i].latencyScore + 25 * pop[i].penaltyCapacity + 25 * pop[i].penaltyBandwith + 25*pop[i].connectionPen;
+        pop[i].fitness =  pop[i].latencyScore + PENALTY_CONSTANT*(pop[i].penaltyCapacity + pop[i].penaltyBandwith + pop[i].connectionPen);
         if(pop[i].penaltyCapacity+pop[i].penaltyBandwith+pop[i].connectionPen == 0){
             pop[i].isFeas =true;
         }
