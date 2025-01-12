@@ -10,6 +10,7 @@
         "cstdlib": "cpp",
         "random": "cpp",
         "xlocale": "cpp",
-        "ios": "cpp"
+        "ios": "cpp",
+        "iosfwd": "cpp"
     }
 }

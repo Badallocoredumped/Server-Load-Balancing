@@ -32,7 +32,7 @@
 #define crossoverProbability 0.9 // Probability of crossover
 #define MUTATION_METHOD 1 // 1 -> random
 #define mutationProbability 0.2 // Probability of mutation
-#define Verbose false // set true to see all the logs
+#define Verbose true // set true to see all the logs
 
 using namespace std;
 
@@ -253,8 +253,8 @@ vector<Chromosome> generateRandomPopulation() {
 // Function to print an individual's server allocations and fitness details
 // Time Complexity: O(S * C). S stands for server number, C stands for client number 
 // Space Complexity: O(1).
-void printIndividual(Chromosome& individual) {
-
+void printIndividual(Chromosome& individual)
+ {
     // Check if the solution is feasible
     if (individual.isFeas) {
         cout << "Feasible Solution" << endl;
@@ -262,29 +262,31 @@ void printIndividual(Chromosome& individual) {
         cout << "Infeasible Solution" << endl;
     }
 
-    // Print header row with client labels
-    cout << setw(10) << left << "Servers";
-    for (int i = 0; i < current1.getNumClients(); i++) {
-        cout << setw(8) << left << ("C" + to_string(i + 1));
+    cout << "\n";
+    cout << setw(15) << left << "Servers";  
+    for (int i = 0; i < current1.getNumClients(); i++) 
+    {
+        
+        cout << setw(10) << left << ("C" + to_string(i + 1));
     }
     cout << endl;
-
-    // Print a separator line for better readability
-    cout << string(10 + current1.getNumClients() * 8, '-') << endl;
+    cout << string(15 + current1.getNumClients() * 10, '-') << endl;
 
     // Print allocations for each server
-    for (int i = 0; i < current1.getNumServers(); i++) {
-        cout << setw(10) << left << ("Server " + to_string(i + 1));
-        for (int j = 0; j < current1.getNumClients(); j++) {
-            cout << setw(8) << left << individual.ServerAllocations[i][j];
+    for (int i = 0; i < current1.getNumServers(); i++) 
+    {
+        cout << setw(15) << left << ("Server " + to_string(i + 1));  // Server labels with extra space
+        for (int j = 0; j < current1.getNumClients(); j++) 
+        {
+            // Print the allocation for each server-client pair
+            cout << setw(10) << left << individual.ServerAllocations[i][j];
         }
         cout << endl;
     }
 
-    // Print a blank line at the end for spacing
-    cout << endl;
+    // Add an extra line for better visual separation
+    cout << "\n";
 }
-
 
 
 // Main genetic algorithm function

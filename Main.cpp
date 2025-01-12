@@ -41,7 +41,7 @@ int main()
         task1.setCapacity(i, a);    
     }
 
-    //Genetic Algorithm main
+    //Genetic Algorithm main5
     geneticAlgorithm(task1);
     
     return 0;
