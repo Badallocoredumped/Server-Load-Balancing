@@ -10,35 +10,31 @@ using namespace std;
 class Task
 {
     private:
-    vector<vector<double>> latencyMatrix;
-    vector<unsigned int> bandwithClients;
-    vector<unsigned int> capacityServers;
-    unsigned int numServers;
-    unsigned int numClients;
-    
-
+    vector<vector<double>> latencyMatrix;  // Matrix to store latency between servers and clients.
+    vector<unsigned int> bandwithClients; // Bandwidth requirement for each client.
+    vector<unsigned int> capacityServers; // Capacity of each server.
+    unsigned int numServers;  // Number of servers.
+    unsigned int numClients;  // Number of clients.
 
     public:
-    //Constructors
-    Task(int NumServers, int numClients);
-    Task(int NumServers, int numClients, vector<vector<double>>);
-    Task();
-    
-    //Methods
-    public:
-    void clear();
-    void setLatency(int server, int client, double value);
-    double getLatency(int server, int client);
-    unsigned int getNumServers();
-    void setNumServers(int num);
-    unsigned int getNumClients();
-    void setNumClients(int num);
-    unsigned int getBandwith(int client);
-    void setBandwith(int client, unsigned int bw);
-    unsigned int getCapacity(int server);
-    void setCapacity(int server, unsigned int cap);
-    void inputMatrix();
-    void printMatrix();
+    Task(int NumServers, int numClients); // Constructor with number of servers and clients.
+    Task(int NumServers, int numClients, vector<vector<double>>); // Constructor with a predefined latency matrix.
+    Task(); // Default constructor.
+
+    // Methods
+    void clear(); // Resets the class attributes.
+    void setLatency(int server, int client, double value); // Sets the latency value for a specific server-client pair.
+    double getLatency(int server, int client); // Gets the latency value for a specific server-client pair.
+    unsigned int getNumServers(); // Returns the number of servers.
+    void setNumServers(int num); // Sets the number of servers.
+    unsigned int getNumClients(); // Returns the number of clients.
+    void setNumClients(int num); // Sets the number of clients.
+    unsigned int getBandwith(int client); // Gets the bandwidth for a specific client.
+    void setBandwith(int client, unsigned int bw); // Sets the bandwidth for a specific client.
+    unsigned int getCapacity(int server); // Gets the capacity of a specific server.
+    void setCapacity(int server, unsigned int cap); // Sets the capacity for a specific server.
+    void inputMatrix(); // Inputs the latency matrix from the user.
+    void printMatrix(); // Prints the latency matrix.
 };
 
 Task::Task()

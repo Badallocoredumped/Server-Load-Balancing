@@ -9,6 +9,7 @@
         "xutility": "cpp",
         "cstdlib": "cpp",
         "random": "cpp",
-        "xlocale": "cpp"
+        "xlocale": "cpp",
+        "ios": "cpp"
     }
 }
